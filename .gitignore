@@ -1,0 +1,18 @@
+# Ignoruj biblioteki (są ciężkie, każdy instaluje je sam)
+node_modules/
+
+# Ignoruj pliki systemowe i logi
+.DS_Store
+*.log
+npm-debug.log*
+
+# Ignoruj bazę danych (każdy powinien mieć swoją czystą)
+*.db
+*.sqlite
+
+# Ignoruj foldery budowania
+dist/
+build/
+
+# Ignoruj pliki środowiskowe (zazwyczaj zawierają hasła)
+.env
