@@ -15,7 +15,6 @@ const PIE_COLORS = ['#F472B6', '#60A5FA', '#FBBF24', '#34D399', '#A78BFA', '#FB9
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [view, setView] = useState('login'); 
-  const [isDemo, setIsDemo] = useState(false); // New Demo State
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
@@ -52,36 +51,15 @@ function App() {
     } catch (err) { alert('Błąd: ' + (err.response?.data?.error || 'Problem z siecią')); }
   };
 
-  const handleDemoLogin = () => {
-    setIsDemo(true);
-    setToken('DEMO_TOKEN');
-    setView('app');
-    setWallets([
-        { currency: 'PLN', amount: 12500.00 },
-        { currency: 'USD', amount: 450.50 },
-        { currency: 'EUR', amount: 1200.00 },
-        { currency: 'GBP', amount: 0.00 },
-        { currency: 'CHF', amount: 350.00 },
-        { currency: 'JPY', amount: 0.00 },
-        { currency: 'CNY', amount: 0.00 }
-    ]);
-    setHistory([
-        { date: new Date().toLocaleDateString(), type: 'WPŁATA', details: 'Zasilenie konta: 1000 PLN' },
-        { date: new Date(Date.now() - 86400000).toLocaleDateString(), type: 'WYMIANA', details: 'Kupno: 100 USD za 400 PLN' },
-        { date: new Date(Date.now() - 172800000).toLocaleDateString(), type: 'WYMIANA', details: 'Kupno: 50 EUR za 220 PLN' }
-    ]);
-  };
-
   const logout = () => {
     setToken(null);
-    setIsDemo(false);
     localStorage.removeItem('token');
     setView('login');
   };
 
   // --- DANE PORTFELA ---
   const fetchData = async () => {
-    if (!token || isDemo) return; // Skip API in demo mode
+    if (!token) return;
     try {
       const resUser = await axios.get(`${API_URL}/dashboard`, { headers: { Authorization: token } });
       setWallets(resUser.data.wallets);
@@ -124,13 +102,13 @@ function App() {
   };
 
   useEffect(() => {
-    if (token && !isDemo) {
+    if (token) {
       setView('app');
       fetchData();
       const i1 = setInterval(fetchData, 60000);
       return () => clearInterval(i1);
     }
-  }, [token, isDemo]);
+  }, [token]);
 
   useEffect(() => {
     if (token) {
@@ -144,7 +122,7 @@ function App() {
     }
   }, [token, chartBase, chartTarget, timeRange]);
 
-  // --- NOWOŚĆ: FUNKCJA ZAMIANY WALUT ---
+  // --- FUNKCJA ZAMIANY WALUT ---
   const swapChartCurrencies = () => {
     const tempBase = chartBase;
     setChartBase(chartTarget);
@@ -155,23 +133,6 @@ function App() {
   const handleExchange = async () => {
     if (exchangeFrom === exchangeTo) { alert("BŁĄD: Wybrałeś te same waluty!"); return; }
     if (!amount || amount <= 0) { alert("Wpisz poprawną kwotę!"); return; }
-
-    if (isDemo) {
-        alert('TRYB DEMO: Symulacja wymiany udana!');
-        setAmount('');
-        // Symulacja aktualizacji portfela w demo (prosta)
-        const newWallets = wallets.map(w => {
-            if (w.currency === exchangeFrom) return { ...w, amount: w.amount - parseFloat(amount) };
-            if (w.currency === exchangeTo) {
-                 const rate = (1 / rates[exchangeFrom]) * rates[exchangeTo];
-                 return { ...w, amount: w.amount + (parseFloat(amount) * rate) };
-            }
-            return w;
-        });
-        setWallets(newWallets);
-        setHistory([{ date: new Date().toLocaleDateString(), type: 'WYMIANA', details: `DEMO: ${amount} ${exchangeFrom} -> ${exchangeTo}` }, ...history]);
-        return;
-    }
 
     try {
       await axios.post(`${API_URL}/exchange`, 
@@ -187,15 +148,6 @@ function App() {
   const handleTopUp = async () => {
     if (!topupAmount || topupAmount <= 0) return alert("Wpisz kwotę!");
     
-    if (isDemo) {
-        alert('TRYB DEMO: Środki wpłacone!');
-        const newWallets = wallets.map(w => w.currency === topupCurrency ? { ...w, amount: w.amount + parseFloat(topupAmount) } : w);
-        setWallets(newWallets);
-        setHistory([{ date: new Date().toLocaleDateString(), type: 'WPŁATA', details: `DEMO: Zasilenie ${topupAmount} ${topupCurrency}` }, ...history]);
-        setTopupAmount('');
-        return;
-    }
-
     try {
       await axios.post(`${API_URL}/topup`, 
         { currency: topupCurrency, amount: parseFloat(topupAmount) },
@@ -343,25 +295,15 @@ function App() {
                     <div className="flex-grow border-t border-white/10"></div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                    <button 
-                    onClick={() => handleAuth(true)} 
-                    className="py-3 rounded-2xl bg-white/5 border border-white/10 text-white text-sm font-bold hover:bg-white/10 hover:border-white/30 transition-all duration-300"
-                    >
-                    Załóż konto
-                    </button>
-                    <button 
-                    onClick={handleDemoLogin} 
-                    className="py-3 rounded-2xl bg-teal-500/10 border border-teal-500/20 text-teal-400 text-sm font-bold hover:bg-teal-500/20 hover:border-teal-500/40 hover:shadow-[0_0_15px_rgba(20,184,166,0.3)] transition-all duration-300"
-                    >
-                    Tryb Demo
-                    </button>
-                </div>
+                <button 
+                onClick={() => handleAuth(true)} 
+                className="w-full py-3 rounded-2xl bg-white/5 border border-white/10 text-white text-sm font-bold hover:bg-white/10 hover:border-white/30 transition-all duration-300"
+                >
+                Załóż konto
+                </button>
             </div>
           </div>
         </div>
-        
-        <p className="text-center text-white/20 text-xs mt-6">© 2026 E-Kantor. Secure & Modern.</p>
       </div>
     </div>
   );
@@ -531,7 +473,6 @@ function App() {
                  <h2 className="text-xl font-bold text-white mb-2">Struktura Aktywów</h2>
                  <p className="text-sm text-white/40 mb-8 leading-relaxed">
                     Wizualna reprezentacja Twojego portfela. <br/>
-                    Dywersyfikacja to klucz do bezpiecznego inwestowania.
                  </p>
                  <div className="grid grid-cols-2 gap-3">
                      {wallets.filter(w => w.amount > 0).map((w, i) => (
@@ -628,15 +569,10 @@ function App() {
                         </button>
                     </div>
                 ) : (
-                    <div className="animate-in fade-in zoom-in-95 duration-300 space-y-6">
-                         <div className="text-center mb-8">
-                            <div className="w-16 h-16 bg-gradient-to-tr from-teal-400 to-emerald-600 rounded-2xl mx-auto flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/20">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8 text-white">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                                </svg>
-                            </div>
-                            <h3 className="text-white font-bold text-lg">Doładuj Konto</h3>
-                            <p className="text-white/40 text-xs">Bezpieczne płatności błyskawiczne</p>
+                    <div className="animate-in fade-in zoom-in-95 duration-300 space-y-6 -mt-12">
+                         <div className="text-center mb-2">
+                            <h3 className="text-white font-bold text-2xl">Doładuj Konto</h3>
+                            <p className="text-white/40 text-sm">Bezpieczne płatności błyskawiczne</p>
                          </div>
 
                          <div className="bg-black/20 p-5 rounded-2xl border border-white/5">
