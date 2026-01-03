@@ -4,6 +4,7 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
+const { calculateExchange, validateAmount } = require('./utils');
 
 const app = express();
 app.use(express.json());
@@ -81,7 +82,7 @@ app.post('/exchange', authenticate, async (req, res) => {
         
         if (!rate) return res.status(400).json({error: "Brak kursu"});
 
-        const resultAmount = amount * rate;
+        const resultAmount = calculateExchange(amount, rate);
 
         db.get(`SELECT amount FROM wallets WHERE user_id = ? AND currency = ?`, [userId, from], (err, row) => {
             if (!row || row.amount < amount) return res.status(400).json({ error: 'Za mało środków' });
@@ -102,7 +103,7 @@ app.post('/topup', authenticate, (req, res) => {
     const { currency, amount } = req.body;
     const userId = req.user.id;
     
-    if (amount <= 0) return res.status(400).json({ error: 'Kwota musi być dodatnia' });
+    if (!validateAmount(amount)) return res.status(400).json({ error: 'Kwota musi być dodatnia' });
 
     db.serialize(() => {
         // Dodajemy środki
@@ -118,7 +119,12 @@ app.post('/topup', authenticate, (req, res) => {
                 res.json({ success: true });
             }
         );
+        });
     });
-});
-
-app.listen(3001, () => console.log('Serwer działa na porcie 3001'));
+    
+    if (require.main === module) {
+        app.listen(3001, () => console.log('Serwer działa na porcie 3001'));
+    }
+    
+    module.exports = app;
+    
