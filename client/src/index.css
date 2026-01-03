@@ -1,3 +1,53 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+    color: #ffffff;
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-xl;
+  }
+  
+  .glass-card {
+    @apply bg-white/10 backdrop-blur-lg border border-white/20 shadow-lg rounded-2xl;
+  }
+
+  .glass-input {
+    @apply bg-white/5 border border-white/10 text-white placeholder-white/50 focus:bg-white/10 focus:border-white/30 focus:outline-none rounded-xl transition-all duration-300;
+  }
+
+  .glass-button {
+    @apply bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02] active:scale-95 transition-all duration-300;
+  }
+  
+  .glass-button-secondary {
+    @apply bg-white/10 text-white border border-white/20 font-bold py-3 px-6 rounded-xl hover:bg-white/20 hover:border-white/40 transition-all duration-300;
+  }
+}
+
+/* Custom Scrollbar for Glass Theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
